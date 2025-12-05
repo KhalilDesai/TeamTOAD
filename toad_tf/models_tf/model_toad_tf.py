@@ -52,7 +52,7 @@ class TOAD_fc_mtl_concat(tf.keras.layers.Layer):
         fc = [tf.keras.layers.Dense(size[1], activation="relu")]
         if dropout:
             fc.append(tf.keras.layers.Dropout(0.25))
-        fc.append([tf.keras.layers.Dense(size[1], activation="relu")])
+        fc.append(tf.keras.layers.Dense(size[1], activation="relu"))
         if dropout:
             fc.append(tf.keras.layers.Dropout(0.25))
         
@@ -62,24 +62,27 @@ class TOAD_fc_mtl_concat(tf.keras.layers.Layer):
         self.attention_net = tf.keras.layers.Sequential(fc)
         self.classifier = tf.keras.layers.Dense(n_classes)
         self.site_classifier = tf.keras.layers.Dense(2)
-                
+                    
     def call(self, h, sex, return_features=False, attention_only=False):
         A, h = self.attention_net(h)  
-        A = tf.transpose(A)
+        A = tf.transpose(A, perm=[1,0])
         if attention_only:
             return A[0]
         
         A_raw = A 
-        A = tf.nn.softmax(A) 
-        M = A*h
-        M = tf.concat([M, tf.tile(sex, [tf.shape(M)[0],1])], axis=1) 
+        A = tf.nn.softmax(A, axis=1) 
+        M = tf.linalg.matmul(A, h)
+        sex = tf.reshape(sex, (1, 1))
+        M = tf.concat([M, sex], axis=1)
 
-        logits  = self.classifier(M[0:1]) 
-        Y_hat = tf.math.topk(logits, 1).indices
+        logits  = self.classifier(M) 
+        Y_hat = tf.math.top_k(logits, k=1).indices
+        Y_hat = tf.squeeze(Y_hat)
         Y_prob = tf.nn.softmax(logits)
 
-        site_logits  = self.site_classifier(M[1:2]) 
-        site_hat = tf.math.topk(site_logits, 1).indices
+        site_logits  = self.site_classifier(M) 
+        site_hat = tf.math.top_k(site_logits, k=1).indices
+        site_hat = tf.squeeze(site_hat)
         site_prob = tf.nn.softmax(site_logits)
 
         results_dict = {}
