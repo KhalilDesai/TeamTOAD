@@ -385,8 +385,6 @@ class Generic_MIL_MTL_Dataset(Generic_WSI_MTL_Dataset):
 			features = torch.from_numpy(features)
 			return features, label, site, sex, coords
 
-
-
 class Generic_Split(Generic_MIL_MTL_Dataset):
 	def __init__(self, slide_data, data_dir=None, num_classes=2, label_cols=None):
 		self.use_h5 = False

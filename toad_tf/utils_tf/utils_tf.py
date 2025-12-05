@@ -26,7 +26,7 @@ def get_simple_loader(dataset, batch_size=1):
             yield collate_MIL_mtl_concat(batch)
 
     output_signature = (
-        tf.TensorSpec(shape=(None, dataset.feat_dim), dtype=tf.float32),  # img bag
+        tf.TensorSpec(shape=(None, 1024), dtype=tf.float32),  # img bag
         tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # label vector
         tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # site vector
         tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # sex vector
@@ -62,7 +62,7 @@ def get_split_loader(split_dataset, training=False, testing=False, weighted=Fals
             yield collate_MIL_mtl_concat([(img, label, site, sex)])
             
     output_signature = (
-        tf.TensorSpec(shape=(None, split_dataset.feat_dim), dtype=tf.float32),  # img bag
+        tf.TensorSpec(shape=(None, 1024), dtype=tf.float32),  # img bag
         tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # label
         tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # site
         tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # sex
