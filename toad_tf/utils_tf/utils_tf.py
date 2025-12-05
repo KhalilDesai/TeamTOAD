@@ -1,61 +1,75 @@
 import tensorflow as tf
-from torchvision import transforms
-from torch.utils.data import DataLoader, Sampler, WeightedRandomSampler, RandomSampler, SequentialSampler, sampler
-import torch.nn.functional as F
-
 import numpy as np
 import pdb
 import math
 from itertools import islice
 import collections
 
-class SubsetSequentialSampler(Sampler):
-	"""Samples elements sequentially from a given list of indices, without replacement.
-
-	Arguments:
-		indices (sequence): a sequence of indices
-	"""
-	def __init__(self, indices):
-		self.indices = indices
-
-	def __iter__(self):
-		return iter(self.indices)
-
-	def __len__(self):
-		return len(self.indices)
-
 def collate_MIL_mtl_concat(batch):
     img = tf.concat([item[0] for item in batch], axis=0)
     label = tf.constant([item[1] for item in batch], dtype=tf.int64)
     site = tf.constant([item[2] for item in batch], dtype=tf.int64)
     sex = tf.constant([item[3] for item in batch], dtype=tf.int64)
-    return [img, label, site, sex]
+    return img, label, site, sex
 
 def get_simple_loader(dataset, batch_size=1):
-	kwargs = {'num_workers': 4} if device.type == "cuda" else {}
-	loader = DataLoader(dataset, batch_size=batch_size, sampler = sampler.SequentialSampler(dataset), collate_fn = collate_MIL_mtl_concat, **kwargs)
-	return loader 
 
-def get_split_loader(split_dataset, training = False, testing = False, weighted = False):
-	"""
-		return either the validation loader or training loader 
-	"""
-	kwargs = {'num_workers': 4} if device.type == "cuda" else {}
-	if not testing:
-		if training:
-			if weighted:
-				weights = make_weights_for_balanced_classes_split(split_dataset)
-				loader = DataLoader(split_dataset, batch_size=1, sampler = WeightedRandomSampler(weights, len(weights)), collate_fn = collate_MIL_mtl_concat, **kwargs)	
-			else:
-				loader = DataLoader(split_dataset, batch_size=1, sampler = RandomSampler(split_dataset), collate_fn = collate_MIL_mtl_concat, **kwargs)
-		else:
-			loader = DataLoader(split_dataset, batch_size=1, sampler = SequentialSampler(split_dataset), collate_fn = collate_MIL_mtl_concat, **kwargs)
-	
-	else:
-		ids = np.random.choice(np.arange(len(split_dataset)), int(len(split_dataset)*0.01), replace = False)
-		loader = DataLoader(split_dataset, batch_size=1, sampler = SubsetSequentialSampler(ids), collate_fn = collate_MIL_mtl_concat, **kwargs )
+    def generator():
+        batch = []
+        for i in range(len(dataset)):
+            batch.append(dataset[i])  # each item is (img, label, site, sex)
+            if len(batch) == batch_size:
+                yield collate_MIL_mtl_concat(batch)
+                batch = []
+        # last partial batch
+        if batch:
+            yield collate_MIL_mtl_concat(batch)
 
-	return loader
+    output_signature = (
+        tf.TensorSpec(shape=(None, dataset.feat_dim), dtype=tf.float32),  # img bag
+        tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # label vector
+        tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # site vector
+        tf.TensorSpec(shape=(None,), dtype=tf.int64),                     # sex vector
+    )
+
+    ds = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+    return ds
+
+def get_split_loader(split_dataset, training=False, testing=False, weighted=False):
+    """
+    return either the validation loader or training loader 
+    """
+    N = len(split_dataset)
+
+    if not testing:
+        if training:
+            if weighted:
+                weights = make_weights_for_balanced_classes_split(split_dataset).numpy()
+                weights = weights / np.sum(weights)
+                indices = np.random.choice(np.arange(N), size=N, replace=True, p=weights)
+            else:
+                indices = np.random.permutation(N)
+        else:
+            indices = np.arange(N)
+    else:
+        ids = np.random.choice(np.arange(N), int(N * 0.01), replace=False)
+        indices = np.sort(ids)
+        
+    def generator():
+        for idx in indices:
+            img, label, site, sex = split_dataset[idx]
+            # mimic PyTorch: batch_size=1, so collate on a singleton list
+            yield collate_MIL_mtl_concat([(img, label, site, sex)])
+            
+    output_signature = (
+        tf.TensorSpec(shape=(None, split_dataset.feat_dim), dtype=tf.float32),  # img bag
+        tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # label
+        tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # site
+        tf.TensorSpec(shape=(1,), dtype=tf.int64),                               # sex
+    )
+
+    ds = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+    return ds
 
 def get_optim(model, args):
     if args.opt == "adam":
@@ -67,19 +81,13 @@ def get_optim(model, args):
     return optimizer
 
 def print_network(net):
-	num_params = 0
-	num_params_train = 0
+	if not net.built:
+		return
+	num_params = sum(tf.size(v).numpy() for v in net.variables)
+	num_params_train = sum(tf.size(v).numpy() for v in net.trainable_variables)
 	print(net)
-	
-	for param in net.parameters():
-		n = param.numel()
-		num_params += n
-		if param.requires_grad:
-			num_params_train += n
-	
-	print('Total number of parameters: %d' % num_params)
-	print('Total number of trainable parameters: %d' % num_params_train)
-
+	print("Total parameters:", num_params)
+	print("Trainable parameters:", num_params_train)
 
 def generate_split(cls_ids, val_num, test_num, samples, n_splits = 5,
 	seed = 7, label_frac = 1.0, custom_test_ids = None):
@@ -130,8 +138,7 @@ def nth(iterator, n, default=None):
 		return next(islice(iterator,n, None), default)
 
 def calculate_error(Y_hat, Y):
-	error = 1. - Y_hat.float().eq(Y.float()).float().mean().item()
-
+	error = 1.0 - float(tf.reduce_mean(tf.cast(tf.equal(Y_hat, Y), tf.float32)).numpy())
 	return error
 
 def make_weights_for_balanced_classes_split(dataset):
@@ -148,4 +155,5 @@ def initialize_weights(model):
     for layer in model.layers:
         if isinstance(layer, tf.keras.layers.Dense):
             layer.kernel.assign(tf.keras.initializers.GlorotNormal()(shape=layer.kernel.shape))
-            layer.bias.assign(tf.zeros(layer.bias.shape))
+            if layer.bias is not None:
+                layer.bias.assign(tf.zeros(layer.bias.shape))

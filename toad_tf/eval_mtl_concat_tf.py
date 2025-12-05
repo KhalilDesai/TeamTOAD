@@ -1,14 +1,10 @@
 from __future__ import print_function
-
 import numpy as np
-
 import argparse
 import tensorflow as tf
-import pdb
 import os
 import pandas as pd
-from utils.utils import *
-from math import floor
+from utils_tf.utils_tf import *
 import matplotlib.pyplot as plt
 from datasets.dataset_mtl_concat import Generic_MIL_MTL_Dataset, save_splits
 import h5py

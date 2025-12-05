@@ -1,16 +1,15 @@
 import numpy as np
 
 import tensorflow as tf
-from models.model_toad import TOAD_fc_mtl_concat
+from models_tf.model_toad_tf import TOAD_fc_mtl_concat
 import pdb
 import os
 import pandas as pd
-from utils.utils import *
-from utils.core_utils_mtl_concat import EarlyStopping,  Accuracy_Logger
-from utils.file_utils import save_pkl, load_pkl
+from utils_tf.utils_tf import *
+from utils_tf.core_utils_mtl_concat_tf import Accuracy_Logger
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 import h5py
-from models.resnet_custom import resnet50_baseline
+from models_tf.resnet_tf import resnet50_baseline
 import math
 from sklearn.preprocessing import label_binarize
 

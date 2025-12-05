@@ -1,15 +1,12 @@
 from __future__ import print_function
-
 import argparse
-import pdb
 import os
-import math
 
 # internal imports
-from utils.file_utils import save_pkl, load_pkl
-from utils.utils import *
-from utils.core_utils_mtl_concat import train
-from datasets.dataset_mtl_concat import Generic_WSI_MTL_Dataset, Generic_MIL_MTL_Dataset
+from utils_tf.file_utils_tf import save_pkl
+from utils_tf.utils_tf import *
+from utils_tf.core_utils_mtl_concat_tf import train
+from datasets_tf.dataset_mtl_concat_tf import Generic_MIL_MTL_Dataset
 
 # pytorch imports
 

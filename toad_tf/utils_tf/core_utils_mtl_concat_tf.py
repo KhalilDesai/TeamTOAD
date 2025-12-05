@@ -1,15 +1,14 @@
 import numpy as np
 import tensorflow as tf
-import pickle 
+import torch as torch
 from utils_tf.utils_tf import *
 import os
-from datasets.dataset_mtl_concat import save_splits
+from datasets_tf.dataset_mtl_concat_tf import save_splits
 from sklearn.metrics import roc_auc_score
 from models_tf.model_toad_tf import TOAD_fc_mtl_concat
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.metrics import auc as calc_auc
 from sklearn.preprocessing import label_binarize
-from tensorboardX import SummaryWriter
 
 class Accuracy_Logger(object):
     """Accuracy logger"""
@@ -95,8 +94,7 @@ def train(datasets, cur, args):
         os.mkdir(writer_dir)
 
     if args.log_data:
-        writer = SummaryWriter(writer_dir, flush_secs=15)
-
+        writer = tf.summary.create_file_writer(writer_dir)
     else:
         writer = None
 
@@ -185,9 +183,26 @@ def train(datasets, cur, args):
     writer.close()
     return results_dict, cls_test_auc, cls_val_auc, 1-cls_test_error, 1-cls_val_error, site_test_auc, site_val_auc, 1-site_test_error, 1-site_val_error 
 
+def to_tf_batch(data, label, site, sex):
+    # data is usually [N, D] float
+    if isinstance(data, torch.Tensor):
+        data = data.numpy()
+    if isinstance(label, torch.Tensor):
+        label = label.numpy()
+    if isinstance(site, torch.Tensor):
+        site = site.numpy()
+    if isinstance(sex, torch.Tensor):
+        sex = sex.numpy()
+
+    data_tf  = tf.convert_to_tensor(data, dtype=tf.float32)
+    label_tf = tf.convert_to_tensor(label, dtype=tf.int64)
+    site_tf  = tf.convert_to_tensor(site, dtype=tf.int64)
+    sex_tf   = tf.convert_to_tensor(sex, dtype=tf.float32)  # or int64 if you prefer
+
+    return data_tf, label_tf, site_tf, sex_tf
 
 def train_loop(epoch, model, loader, optimizer, n_classes, writer = None, loss_fn = None):   
-  
+
     cls_logger = Accuracy_Logger(n_classes=n_classes)
     site_logger = Accuracy_Logger(n_classes=2)
     cls_train_error = 0.
@@ -196,6 +211,8 @@ def train_loop(epoch, model, loader, optimizer, n_classes, writer = None, loss_f
     site_train_loss = 0.
     print('\n')
     for batch_idx, (data, label, site, sex) in enumerate(loader):
+
+        data, label, site, sex = to_tf_batch(data, label, site, sex)
         sex = tf.cast(sex, tf.float32)
             
         results_dict = model(data, sex)
@@ -271,6 +288,8 @@ def validate(cur, epoch, model, loader, n_classes, early_stopping = None, writer
     site_labels = np.zeros(len(loader))
 
     for batch_idx, (data, label, site, sex) in enumerate(loader):
+
+        data, label, site, sex = to_tf_batch(data, label, site, sex)
         sex = tf.cast(sex, tf.float32)
 
         results_dict = model(data, sex, training=False)
@@ -375,6 +394,8 @@ def summary(model, loader, n_classes):
     patient_results = {}
 
     for batch_idx, (data, label, site, sex) in enumerate(loader):
+
+        data, label, site, sex = to_tf_batch(data, label, site, sex)
         sex = tf.cast(sex, tf.float32)
 
         slide_id = slide_ids.iloc[batch_idx]

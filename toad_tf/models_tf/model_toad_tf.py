@@ -22,8 +22,8 @@ class Attn_Net_Gated(tf.keras.layers.Layer):
             self.attention_a.append(tf.keras.layers.Dropout(0.25))
             self.attention_b.append(tf.keras.layers.Dropout(0.25))
 
-        self.attention_a = tf.keras.layers.Sequential(self.attention_a)
-        self.attention_b = tf.keras.layers.Sequential(self.attention_b)
+        self.attention_a = tf.keras.Sequential(self.attention_a)
+        self.attention_b = tf.keras.Sequential(self.attention_b)
         
         self.attention_c = tf.keras.layers.Dense(D)
     
@@ -59,7 +59,7 @@ class TOAD_fc_mtl_concat(tf.keras.layers.Layer):
         attention_net = Attn_Net_Gated(D = size[2], dropout = dropout)
         
         fc.append(attention_net)
-        self.attention_net = tf.keras.layers.Sequential(fc)
+        self.attention_net = tf.keras.Sequential(fc)
         self.classifier = tf.keras.layers.Dense(n_classes)
         self.site_classifier = tf.keras.layers.Dense(2)
                     
