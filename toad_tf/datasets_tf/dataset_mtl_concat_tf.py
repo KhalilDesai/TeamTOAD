@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 import os
-import torch
 import numpy as np
 import pandas as pd
 import math
@@ -8,7 +7,6 @@ import re
 import pdb
 import pickle
 from scipy import stats
-from torch.utils.data import Dataset
 import h5py
 from utils_tf.utils_tf import generate_split, nth
 
@@ -27,7 +25,7 @@ def save_splits(split_datasets, column_keys, filename, boolean_style=False):
 
 	df.to_csv(filename)
 
-class Generic_WSI_MTL_Dataset(Dataset):
+class Generic_WSI_MTL_Dataset:
 	def __init__(self,
 		csv_path = None,
 		shuffle = False, 
@@ -371,19 +369,18 @@ class Generic_MIL_MTL_Dataset(Generic_WSI_MTL_Dataset):
 			data_dir = self.data_dir
 
 		if not self.use_h5:
-			full_path = os.path.join(data_dir, '{}.pt'.format(slide_id))
-			features = torch.load(full_path)
+			full_path = os.path.join(data_dir, f"{slide_id}.npz")
+			data = np.load(full_path)
+			features = data["features"]
 			return features, label, site, sex
 			
-
 		else:
 			full_path = os.path.join(data_dir, '{}.h5'.format(slide_id))
 			with h5py.File(full_path,'r') as hdf5_file:
 				features = hdf5_file['features'][:]
 				coords = hdf5_file['coords'][:]
 
-			features = torch.from_numpy(features)
-			return features, label, site, sex, coords
+			return features.astype(np.float32), label, site, sex, coords
 
 class Generic_Split(Generic_MIL_MTL_Dataset):
 	def __init__(self, slide_data, data_dir=None, num_classes=2, label_cols=None):
