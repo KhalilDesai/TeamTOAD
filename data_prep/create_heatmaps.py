@@ -21,7 +21,7 @@ import yaml
 from wsi_core.batch_process_utils import initialize_df
 from vis_utils.heatmap_utils import initialize_wsi, drawHeatmap, compute_from_patches
 from wsi_core.wsi_utils import sample_rois
-from utils.file_utils import save_hdf5
+from our_model.file_utils import save_hdf5
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description='Heatmap inference script')

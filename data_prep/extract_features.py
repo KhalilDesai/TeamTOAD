@@ -13,7 +13,7 @@ import openslide
 from tqdm import tqdm
 import numpy as np
 
-from utils.file_utils import save_hdf5
+from our_model.file_utils import save_hdf5
 from dataset_modules.dataset_h5 import Dataset_All_Bags, Whole_Slide_Bag, get_eval_transforms
 from models import get_encoder
 
