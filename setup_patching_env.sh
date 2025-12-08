@@ -83,7 +83,7 @@ echo "   - matplotlib"
 pip install --quiet matplotlib
 
 echo "   - openslide"
-pip install --quiet openslide-python
+conda install -c conda-forge openslide --quiet
 
 echo "   - PIL"
 pip install --quiet Pillow
