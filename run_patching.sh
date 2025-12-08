@@ -12,8 +12,12 @@
 #SBATCH --mail-type=END         # Sends email when the job finishes
 #SBATCH --mail-user=your_email@example.com   # Replace with your email
 
-
+# loads and sources conda module
 module load miniconda3/23.11.0s
+source /oscar/runtime/software/external/miniconda3/23.11.0/etc/profile.d/conda.sh
+
+# activates environment
 conda activate final_project
 
+# runs patching command
 python create_patches_fp.py --source TOAD_toy_data --save_dir patches_dir --patch_size 256 --seg --patch --stitch 
