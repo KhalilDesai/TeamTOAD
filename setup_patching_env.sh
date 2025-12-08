@@ -98,7 +98,6 @@ echo ""
 echo -e "${BLUE}[5/5] Testing installation...${NC}"
 python << 'EOF'
 import sys
-import tensorflow as tf
 import numpy as np
 import wandb
 import tqdm
