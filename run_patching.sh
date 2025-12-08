@@ -20,4 +20,4 @@ source /oscar/runtime/software/external/miniconda3/23.11.0/etc/profile.d/conda.s
 conda activate final_project
 
 # runs patching command
-python create_patches_fp.py --source TOAD_toy_data --save_dir patches_dir --patch_size 256 --seg --patch --stitch 
+python our_model/create_patches_fp.py --source TOAD_toy_data --save_dir patches_dir --patch_size 256 --seg --patch --stitch 
