@@ -58,12 +58,13 @@ echo ""
 
 # Install packages
 echo -e "${BLUE}[4/5] Installing required packages...${NC}"
-echo "   - tensorflow (this may take a few minutes)"
-pip install --quiet tensorflow==2.15.0
+# echo "   - tensorflow (this may take a few minutes)"
+# pip install --quiet tensorflow==2.15.0
 echo "   - numpy"
 pip install --quiet numpy
 
 echo "   - wandb"
+pip install click platformdirs pyyaml
 pip install --quiet wandb
 
 echo "   - tqdm"
