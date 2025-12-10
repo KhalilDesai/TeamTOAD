@@ -15,16 +15,6 @@ def load_pkl(filename):
 
 
 def save_hdf5(output_path, asset_dict, attr_dict= None, mode='a', chunk_size=32):
-    """
-    Save data to HDF5 file. Handles both numpy arrays and TensorFlow tensors.
-    
-    Args:
-        output_path: Path to output HDF5 file
-        asset_dict: Dictionary of data to save (values can be numpy arrays or TF tensors)
-        attr_dict: Optional dictionary of attributes to save
-        mode: File mode ('w' for write, 'a' for append)
-        chunk_size: Chunk size for HDF5 dataset
-    """
     with h5py.File(output_path, mode) as file:
         for key, val in asset_dict.items():
             # Convert TensorFlow tensor to numpy array if needed
