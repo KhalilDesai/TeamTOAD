@@ -1,14 +1,12 @@
 import os
 from functools import partial
-import timm
-from timm_wrapper import TimmCNNEncoder
-import torch
+from timm_wrapper import CNNEncoder
 from constants import MODEL2CONSTANTS
 from transform_utils import get_eval_transforms
         
 def get_encoder(model_name, target_img_size=224):
     print('loading model checkpoint')
-    model = TimmCNNEncoder()
+    model = CNNEncoder(model_name=model_name)
     print(model)
     constants = MODEL2CONSTANTS[model_name]
     img_transforms = get_eval_transforms(mean=constants['mean'],

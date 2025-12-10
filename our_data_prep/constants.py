@@ -8,6 +8,10 @@ MODEL2CONSTANTS = {
 		"mean": IMAGENET_MEAN,
 		"std": IMAGENET_STD
 	},
+	"efficientnet": {
+		"mean": IMAGENET_MEAN,
+		"std": IMAGENET_STD
+	},
 	"uni_v1":
 	{
 		"mean": IMAGENET_MEAN,

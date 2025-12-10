@@ -1,13 +1,11 @@
 import numpy as np
 import pandas as pd
-
-from torch.utils.data import Dataset
-from torchvision import transforms
+import tensorflow as tf
 
 from PIL import Image
 import h5py
 
-class Whole_Slide_Bag(Dataset):
+class Whole_Slide_Bag:
 	def __init__(self,
 		file_path,
 		img_transforms=None):
@@ -44,8 +42,27 @@ class Whole_Slide_Bag(Dataset):
 		img = Image.fromarray(img)
 		img = self.roi_transforms(img)
 		return {'img': img, 'coord': coord}
+	
+	def to_tf_dataset(self, batch_size=256, shuffle=False):
+		"""Convert to TensorFlow Dataset"""
+		def generator():
+			for idx in range(self.length):
+				yield self[idx]
+		
+		# Transform outputs HWC format (H, W, 3), so signature should match
+		# After batching it becomes (B, H, W, 3)
+		output_signature = {
+			'img': tf.TensorSpec(shape=(None, None, 3), dtype=tf.float32),
+			'coord': tf.TensorSpec(shape=(2,), dtype=tf.int32)
+		}
+		
+		dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+		if shuffle:
+			dataset = dataset.shuffle(buffer_size=min(1000, self.length))
+		dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+		return dataset
 
-class Whole_Slide_Bag_FP(Dataset):
+class Whole_Slide_Bag_FP:
 	def __init__(self,
 		file_path,
 		wsi,
@@ -87,8 +104,27 @@ class Whole_Slide_Bag_FP(Dataset):
 
 		img = self.roi_transforms(img)
 		return {'img': img, 'coord': coord}
+	
+	def to_tf_dataset(self, batch_size=256, shuffle=False):
+		"""Convert to TensorFlow Dataset"""
+		def generator():
+			for idx in range(self.length):
+				yield self[idx]
+		
+		# Transform outputs HWC format (H, W, 3), so signature should match
+		# After batching it becomes (B, H, W, 3)
+		output_signature = {
+			'img': tf.TensorSpec(shape=(None, None, 3), dtype=tf.float32),
+			'coord': tf.TensorSpec(shape=(2,), dtype=tf.int32)
+		}
+		
+		dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+		if shuffle:
+			dataset = dataset.shuffle(buffer_size=min(1000, self.length))
+		dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+		return dataset
 
-class Dataset_All_Bags(Dataset):
+class Dataset_All_Bags:
 
 	def __init__(self, csv_path):
 		self.df = pd.read_csv(csv_path)

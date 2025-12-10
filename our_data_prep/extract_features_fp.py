@@ -4,10 +4,7 @@ import argparse
 import pdb
 from functools import partial
 
-import torch
-import torch.nn as nn
-import timm
-from torch.utils.data import DataLoader
+import tensorflow as tf
 from PIL import Image
 import h5py
 import openslide
@@ -19,31 +16,42 @@ from file_utils import save_hdf5
 from dataset_h5 import Dataset_All_Bags, Whole_Slide_Bag_FP
 from model import get_encoder
 
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-def compute_w_loader(output_path, loader, model, verbose = 0):
+def compute_w_loader(output_path, dataset, model, verbose = 0):
 	"""
 	args:
 		output_path: directory to save computed features (.h5 file)
-		model: pytorch model
+		dataset: TensorFlow dataset
+		model: TensorFlow model
 		verbose: level of feedback
 	"""
 	if verbose > 0:
-		print(f'processing a total of {len(loader)} batches'.format(len(loader)))
+		# Note: Can't easily count TF dataset batches without consuming it
+		# Will show progress without total count
+		print('processing batches...')
 
 	mode = 'w'
-	for count, data in enumerate(tqdm(loader)):
-		with torch.inference_mode():	
-			batch = data['img']
-			coords = data['coord'].numpy().astype(np.int32)
-			batch = batch.to(device, non_blocking=True)
-			
-			features = model(batch)
-			features = features.cpu().numpy().astype(np.float32)
+	for count, data in enumerate(tqdm(dataset)):
+		batch = data['img']
+		coords = data['coord']
+		
+		# Convert coords to numpy if it's a TF tensor
+		if hasattr(coords, 'numpy'):
+			coords = coords.numpy().astype(np.int32)
+		else:
+			coords = np.array(coords).astype(np.int32)
+		
+		# Forward pass through model
+		features = model(batch, training=False)
+		
+		# Convert features to numpy if it's a TF tensor
+		if hasattr(features, 'numpy'):
+			features = features.numpy().astype(np.float32)
+		else:
+			features = np.array(features).astype(np.float32)
 
-			asset_dict = {'features': features, 'coords': coords}
-			save_hdf5(output_path, asset_dict, attr_dict= None, mode=mode)
-			mode = 'a'
+		asset_dict = {'features': features, 'coords': coords}
+		save_hdf5(output_path, asset_dict, attr_dict= None, mode=mode)
+		mode = 'a'
 	
 	return output_path
 
@@ -51,10 +59,10 @@ def compute_w_loader(output_path, loader, model, verbose = 0):
 parser = argparse.ArgumentParser(description='Feature Extraction')
 parser.add_argument('--data_h5_dir', type=str, default=None)
 parser.add_argument('--data_slide_dir', type=str, default=None)
-parser.add_argument('--slide_ext', type=str, default= '.svs')
+parser.add_argument('--slide_ext', type=str, default='.svs')
 parser.add_argument('--csv_path', type=str, default=None)
 parser.add_argument('--feat_dir', type=str, default=None)
-parser.add_argument('--model_name', type=str, default='resnet50_trunc', choices=['resnet50_trunc', 'uni_v1', 'conch_v1'])
+parser.add_argument('--model_name', type=str, default='resnet50_trunc', choices=['resnet50_trunc', 'efficientnet', 'uni_v1', 'conch_v1'])
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--no_auto_skip', default=False, action='store_true')
 parser.add_argument('--target_patch_size', type=int, default=224)
@@ -74,12 +82,7 @@ if __name__ == '__main__':
 	os.makedirs(os.path.join(args.feat_dir, 'npz_files'), exist_ok=True)
 	
 	model, img_transforms = get_encoder(args.model_name, target_img_size=args.target_patch_size)
-			
-	_ = model.eval()
-	model = model.to(device)
 	total = len(bags_dataset)
-
-	loader_kwargs = {'num_workers': 8, 'pin_memory': True} if device.type == "cuda" else {}
 
 	for bag_candidate_idx in tqdm(range(total)):
 		slide_id = bags_dataset[bag_candidate_idx].split(args.slide_ext)[0]
@@ -96,8 +99,9 @@ if __name__ == '__main__':
 							   		 wsi=wsi, 
 									 img_transforms=img_transforms)
 
-		loader = DataLoader(dataset=dataset, batch_size=args.batch_size, **loader_kwargs)
-		output_file_path = compute_w_loader(output_path, loader = loader, model = model, verbose = 1)
+		# Convert to TensorFlow dataset
+		tf_dataset = dataset.to_tf_dataset(batch_size=args.batch_size, shuffle=False)
+		output_file_path = compute_w_loader(output_path, dataset=tf_dataset, model=model, verbose=1)
 
 		time_elapsed = time.time() - time_start
 		print('\ncomputing features for {} took {} s'.format(output_file_path, time_elapsed))
