@@ -39,7 +39,7 @@ def get_loader(dataset):
             yield feat, tf.convert_to_tensor([label], dtype=tf.int32)
 
     output_signature = (
-        tf.TensorSpec(shape=(None, 1024), dtype=tf.float32),  # bag
+        tf.TensorSpec(shape=(None, 320), dtype=tf.float32),  # bag
         tf.TensorSpec(shape=(1,), dtype=tf.int32),            # label
     )
 
