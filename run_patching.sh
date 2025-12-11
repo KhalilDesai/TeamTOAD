@@ -20,4 +20,4 @@ source /oscar/runtime/software/external/miniconda3/23.11.0/etc/profile.d/conda.s
 conda activate final_project
 
 # runs patching command
-python our_preprocessing/create_patches_fp.py --source TOAD_dataset_testing --save_dir patches_dir_testing --patch_size 256 --seg --patch --stitch 
+python our_preprocessing/create_patches_fp.py --source TOAD_dataset_validation --save_dir patches_dir_validation --patch_size 256 --seg --patch --stitch 
