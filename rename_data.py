@@ -2,7 +2,7 @@ import os
 import shutil
 
 # Define the root folder containing the cancer type folders
-root_folder = 'TOAD_dataset_testing'
+root_folder = 'TOAD_dataset_test'
 
 # List of cancer types (folders)
 cancer_types = ['BRCA', 'COAD', 'CCRCC', 'LUAD']
