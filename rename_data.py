@@ -2,11 +2,11 @@ import os
 import shutil
 
 # Define the root folder containing the cancer type folders
-root_folder = 'TOAD_dataset_test'
+root_folder = 'TOAD_dataset_validation'
 
 # List of cancer types (folders)
 cancer_types = ['BRCA', 'COAD', 'CCRCC', 'LUAD']
-unique_identifier = "testing"
+unique_identifier = "validation"
 
 # Loop through each cancer type folder
 for cancer_type in cancer_types:
