@@ -6,6 +6,7 @@ root_folder = 'TOAD_dataset_testing'
 
 # List of cancer types (folders)
 cancer_types = ['BRCA', 'COAD', 'CCRCC', 'LUAD']
+unique_identifier = "testing"
 
 # Loop through each cancer type folder
 for cancer_type in cancer_types:
@@ -23,7 +24,7 @@ for cancer_type in cancer_types:
         # Loop through the .svs files and rename them
         for i, filename in enumerate(svs_files, start=1):
             # Generate the new file name
-            new_name = f"{cancer_type}_{i}.svs"
+            new_name = f"{cancer_type}_{i}_{unique_identifier}.svs"
             
             # Get the full path to the original and new file names
             original_path = os.path.join(cancer_folder, filename)
