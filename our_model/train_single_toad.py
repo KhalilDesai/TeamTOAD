@@ -75,6 +75,8 @@ def main(args):
     for epoch in range(args.epochs):
         loss = train_one_epoch(loader, model, optimizer, loss_fn)
         print(f"Epoch {epoch+1}/{args.epochs} - Loss: {loss:.4f}")
+    
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -34,7 +34,7 @@ class Attn_Net_Gated(tf.keras.layers.Layer):
     def call(self, x):
         a = self.attention_a(x)
         b = self.attention_b(x)
-        A = a*b
+        A = a * b
         A = self.attention_c(A)  # N x n_classes
         return A, x
 
@@ -47,7 +47,6 @@ args:
     dropout: whether to use dropout in attention network
     n_classes: number of classes
 """
-
 class TOAD_fc_single_task(tf.keras.Model):
     def __init__(self, size_arg="big", dropout=False, n_classes=2):
         super().__init__()
